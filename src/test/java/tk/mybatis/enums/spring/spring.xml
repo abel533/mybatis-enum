@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:jdbc="http://www.springframework.org/schema/jdbc"
+       xmlns="http://www.springframework.org/schema/beans"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+						http://www.springframework.org/schema/beans/spring-beans.xsd
+       					http://www.springframework.org/schema/jdbc http://www.springframework.org/schema/jdbc/spring-jdbc.xsd"
+       default-lazy-init="false">
+
+  <jdbc:embedded-database id="dataSource" generate-name="true">
+    <jdbc:script location="classpath:tk/mybatis/enums/spring/CreateDB.sql"/>
+  </jdbc:embedded-database>
+
+  <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+    <property name="dataSource" ref="dataSource"/>
+    <!--<property name="configLocation" value="classpath:tk/mybatis/enums/spring/mybatis-config.xml"/>-->
+    <!--<property name="typeHandlersPackage" value="tk.mybatis.enums.spring"/>-->
+    <!--<property name="configuration">-->
+    <!--<bean class="org.apache.ibatis.session.Configuration">-->
+    <!--<property name="defaultEnumTypeHandler" value="tk.mybatis.enums.spring.LabelValueTypeHandler"/>-->
+    <!--</bean>-->
+    <!--</property>-->
+    <property name="typeHandlers">
+      <array>
+        <!--很明显这里没法配置 `javaType`，因此必须使用 @MappedTypes(LabelValue.class) 注解-->
+        <bean class="tk.mybatis.enums.spring.LabelValueTypeHandler"/>
+      </array>
+    </property>
+  </bean>
+
+  <!-- If we simply comment out this bean, then the test runs -->
+  <bean id="sqlSessionTemplate" class="org.mybatis.spring.SqlSessionTemplate">
+    <constructor-arg index="0" ref="sqlSessionFactory"/>
+    <constructor-arg index="1" value="SIMPLE"/>
+    <constructor-arg index="2">
+      <null/>
+    </constructor-arg>
+  </bean>
+
+  <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+    <property name="basePackage" value="tk.mybatis.enums.spring.mapper"/>
+    <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"/>
+  </bean>
+
+</beans>

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="tk.mybatis.enums.result.Mapper">
+
+  <resultMap id="map1" type="tk.mybatis.enums.result.User">
+    <constructor>
+      <idArg column="id" javaType="int"/>
+      <arg column="name" javaType="string"/>
+      <arg column="sex" javaType="tk.mybatis.enums.result.Sex"
+           typeHandler="org.apache.ibatis.type.EnumOrdinalTypeHandler"/>
+    </constructor>
+  </resultMap>
+
+  <select id="getUser1" resultMap="map1">
+    select * from users where id = #{id}
+  </select>
+
+  <resultMap id="map2" type="tk.mybatis.enums.result.User">
+    <id column="id" property="id" javaType="int"/>
+    <result column="name" property="name" javaType="string"/>
+    <result column="sex" property="sex" javaType="tk.mybatis.enums.result.Sex"
+            typeHandler="org.apache.ibatis.type.EnumOrdinalTypeHandler"/>
+  </resultMap>
+
+  <select id="getUser2" resultMap="map2">
+    select * from users where id = #{id}
+  </select>
+
+  <insert id="insertUser">
+    insert into users (id, name, sex) values (
+      #{id},
+      #{name},
+      #{sex, javaType=tk.mybatis.enums.result.Sex,
+             typeHandler=org.apache.ibatis.type.EnumOrdinalTypeHandler}
+    )
+  </insert>
+
+</mapper>
