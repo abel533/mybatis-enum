@@ -1,4 +1,4 @@
-连续好几天都在写这篇 GitChat，加起来的时间可能已经超过20多小时了，至今还差1/10左右才算真正写完。
+连续好几天都在写这篇 GitChat，加起来的时间可能已经超过20多小时了。
 
 本来想和之前的 Chat 一样发布后在 1 个月后免费，现在发现制度变了，付费文章需要等待 1 年后才能免费，想要参与的可以点击底部阅读原文查看。
 
@@ -82,7 +82,93 @@ public enum Sex {
 #### 4.3 默认枚举处理器
 #### 4.4 继承形式的类型处理器
 ### 5. Spring 集成
-#### 5.1 Spring XML 配置
+
+由于 Spring 和 Spring Boot 配置方式不同，这里分别讲解各自的配置方式。
+
+### [5.1 Spring XML 配置](https://github.com/abel533/mybatis-enum/tree/master/src/test/java/tk/mybatis/enums/spring)
+
+Spring 集成 MyBatis 的时候，配置 `SqlSessionFactoryBean` 时如果指定 `configLocation`，就可以用 MyBatis 配置方式配置，示例如下：
+
+```xml
+<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+  <property name="dataSource" ref="dataSource"/>
+  <property name="configLocation" value="classpath:tk/mybatis/enums/spring/mybatis-config.xml"/>
+</bean>
+```
+
+如果你真用的这种方式，也没任何问题，如果我只提供这么一个方案就有点说不过去了。下面看看纯 Spring 的配置方式：
+
+```xml
+<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+  <property name="dataSource" ref="dataSource"/>
+  <property name="typeHandlers">
+    <array>
+      <!--很明显这里没法配置 `javaType`，因此必须使用 @MappedTypes(LabelValue.class) 注解-->
+      <bean class="tk.mybatis.enums.spring.LabelValueTypeHandler">
+        <!--由于没有默认无参的构造方法，所以只能指定构造参数，实际上给这个类型处理器提供一个无参的构造方法会更简单，也没有错-->
+        <constructor-arg index="0" value="tk.mybatis.enums.spring.LabelValue"/>
+      </bean>
+    </array>
+  </property>
+</bean>
+```
+
+`SqlSessionFactoryBean` 提供了 `typeHandlers` 属性配置，因此可以用这种方式进行配置。但是这种方式配置有点特殊的地方，在用这种方式时，无法指定 `javaType` 类型，因此上面的例子用了 `@MappedTypes(LabelValue.class)` 注解。
+除此之外，配置 `LabelValueTypeHandler` 因为构造方法的原因，要多配置一个 `<constructor-arg>`，如果增加一个默认无参的构造方法，例如下面的代码：
+
+```java
+@MappedTypes(LabelValue.class)
+public class LabelValueTypeHandler<E extends LabelValue> extends BaseTypeHandler<E> {
+  private Class<E> type;
+  private Map<Integer, E> enumMap;
+
+  public LabelValueTypeHandler() {
+  }
+
+  public LabelValueTypeHandler(Class<E> type) {
+    //省略其他
+  }
+
+```
+
+此时上面的配置可以简化为：
+
+```xml
+<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+  <property name="dataSource" ref="dataSource"/>
+  <property name="typeHandlers">
+    <array>
+      <bean class="tk.mybatis.enums.spring.LabelValueTypeHandler"/>
+    </array>
+  </property>
+</bean>
+```
+
+这些都是技巧，结合本文所有示例看 **2. 深入了解 TypeHandler 类型处理器** 时会加深理解，对这种用法会了解的更多。
+
+除了 `typeHandlers` 配置外，`SqlSessionFactoryBean` 还提供了 `typeAliasesPackage` 配置类型处理器的包名，通过扫描包获取包下所有类型处理器，示例如下：
+
+```xml
+<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+  <property name="dataSource" ref="dataSource"/>
+  <property name="typeHandlersPackage" value="tk.mybatis.enums.spring"/>
+</bean>
+```
+
+如果想在纯 Spring 配置情况下配置默认枚举类型处理，可以用下面的方式：
+```xml
+<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+  <property name="dataSource" ref="dataSource"/>
+  <property name="configuration">
+    <bean class="org.apache.ibatis.session.Configuration">
+      <property name="defaultEnumTypeHandler" value="tk.mybatis.enums.spring.LabelValueTypeHandler"/>
+    </bean>
+  </property>
+</bean>
+```
+
+针对 Spring XML 配置方式就这几种，下面看看 Spring Boot 如何配置。
+
 #### 5.2 Spring Boot 配置
 #### 5.3 Spring MVC 中的枚举转换
 ### 6. 总结
